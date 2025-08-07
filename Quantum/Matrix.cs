@@ -29,26 +29,32 @@ namespace Quantum
         }
         public Matrix Transpose()
         {
-            int[,] tempArray = new int[shape[0], shape[1]];
-            Array.Copy(Data, tempArray, Data.Length);
-            Data = new int[shape[1], shape[0]];
             Matrix mat = new Matrix(shape[1], shape[0]);
-            for (int i = 0; i < tempArray.GetLength(0);)
+            for (int i = 0; i < shape[0]; i++)
             {
-                for(int ii=0; ii<tempArray.GetLength(1); ii++)
+                for (int j = 0; j < shape[1]; j++)
                 {
-                    Data[i,ii] = tempArray[ii,i];
+                    mat[j, i] = this[i, j];
                 }
             }
-            mat.SetValues(Data);
             return mat;
-
-            //TO FINISH
         }
         public Matrix MatrixMultiply(Matrix mat)
         {
-            return null;
+            Matrix result = new Matrix(shape[0], mat.shape[1]);
+            for (int i = 0; i < shape[0]; i++)
+            {
+                int[] row = this.GetRow(i);
+                for (int j = 0; j < mat.shape[1]; j++)
+                {
+                    int[] col = mat.GetColumn(j);
+                    result[i, j] = DotProduct(row, col);
+                }
+            }
+
+            return result;
         }
+        
         public Matrix AddMatrix(Matrix mat)
         {
             if (mat.shape != shape)
@@ -98,9 +104,24 @@ namespace Quantum
             int[] col = new int [rows];
             for (int j = 0; j < rows; j++)
             {
-                col[j] = Data[colIndex, j];
+                col[j] = Data[j, colIndex];
             }
             return col;
+        }
+        private int DotProduct(int[] a, int[] b)
+        {
+            if (a.Length != b.Length)
+            {
+                throw new ArgumentException("Vectors must be the same length for dot product.");
+            }
+
+            int result = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                result += a[i] * b[i];
+            }
+
+            return result;
         }
     }
 }
