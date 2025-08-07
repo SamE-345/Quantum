@@ -7,42 +7,7 @@ using System.Threading.Tasks;
 namespace Quantum
 {
     
-    public struct ComplexNum
-    {
-        public int Real;
-        public int Imaginary;
-        public double theta;
-        public double r;
-        public ComplexNum(int re, int i)
-        {
-            Real = re; Imaginary = i;
-            theta = Math.Atan2(i, r);
-            r = Magnitude();
-        }
-        public void ComplexConjugate()
-        {
-            Imaginary *= -1;
-        }
-        public void MultiplyByScalar(int scalar)
-        {
-            Real *= scalar;
-            Imaginary *= scalar;
-        }
-        public void MultiplyByComplex(ComplexNum complexNum)
-        {
-            Real = complexNum.Real * Real + Imaginary * complexNum.Imaginary;
-            Imaginary = complexNum.Imaginary * Real + complexNum.Real * Imaginary;
-        }
-        public void AddScalar(int scalar)
-        {
-            Real += scalar;
-        }
-        public double Magnitude()
-        {
-            return Math.Sqrt(Math.Pow(Real, 2)+Math.Pow(Imaginary,2));
-        }
-    }
-
+    
 
     public class Matrix
     {
@@ -68,6 +33,13 @@ namespace Quantum
             Array.Copy(Data, tempArray, Data.Length);
             Data = new int[shape[1], shape[0]];
             Matrix mat = new Matrix(shape[1], shape[0]);
+            for (int i = 0; i < tempArray.GetLength(0);)
+            {
+                for(int ii=0; ii<tempArray.GetLength(1); ii++)
+                {
+                    Data[i,ii] = tempArray[ii,i];
+                }
+            }
             mat.SetValues(Data);
             return mat;
 
@@ -109,6 +81,26 @@ namespace Quantum
             {
                 Data = ints;
             }
+        }
+        public int[] GetRow(int rowIndex)
+        {
+            int cols = Data.GetLength(1);
+            int[] row = new int[cols];
+            for (int j = 0; j < cols; j++)
+            {
+                row[j] = Data[rowIndex, j];
+            }
+            return row;
+        }
+        public int[] GetColumn(int colIndex)
+        {
+            int rows = Data.GetLength(0);
+            int[] col = new int [rows];
+            for (int j = 0; j < rows; j++)
+            {
+                col[j] = Data[colIndex, j];
+            }
+            return col;
         }
     }
 }

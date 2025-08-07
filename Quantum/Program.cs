@@ -10,10 +10,7 @@ namespace Quantum
     {
         protected T[,] Data;
 
-        public virtual Matrix ApplyGate(Matrix mat)
-        {
-            return null;
-        }
+        
         protected T[] GetRow(int rowIndex)
         {
             int cols = Data.GetLength(1);
@@ -23,6 +20,16 @@ namespace Quantum
                 row[j] = Data[rowIndex, j];
             }
             return row;
+        }
+        protected T[] GetColumn(int colIndex)
+        {
+            int rows = Data.GetLength(0);
+            T[] col = new T[rows];
+            for (int j = 0; j < rows; j++)
+            {
+                col[j] = Data[colIndex, j];
+            }
+            return col;
         }
         public virtual Vectors ApplyGate(Vectors vec)
         {
@@ -54,7 +61,7 @@ namespace Quantum
         }
         protected virtual ComplexNum Dotproduct(ComplexNum[] input1, ComplexNum[] input2)
         {
-            return input2[0];
+            return input2[0]; //TODO
         }
 
 
@@ -69,14 +76,17 @@ namespace Quantum
         private ComplexNum[,] Data = new ComplexNum[2, 2];
         public YGate()
         {
-            Data[0, 0] = new ComplexNum(0, 1);
-            Data[1, 1] = new ComplexNum(0, -1);
-            Data[0, 1] = new ComplexNum(0, 0);
-            Data[1, 0] = new ComplexNum(0, 0);
+            Data[0, 0] = new ComplexNum(0, 0);
+            Data[1, 1] = new ComplexNum(0, 0);
+            Data[0, 1] = new ComplexNum(0, -1);
+            Data[1, 0] = new ComplexNum(0, 1);
         }
-        public override Matrix ApplyGate(Matrix mat)
+        public YGate ComplexConjugate()
         {
-            return null;
+            YGate yGate = new YGate();
+            yGate.Data[0, 1] = new ComplexNum(0, 1);
+            yGate.Data[1, 0] = new ComplexNum(0, -1);
+            return yGate;   
         }
         
     }
