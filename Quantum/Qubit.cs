@@ -20,7 +20,7 @@ namespace Quantum
             state[0] = alpha;
             state[1] = beta;
             if (!IsValidQubit())
-                throw new ArgumentException("Qubit amplitudes must be normalized: |α|² + |β|² = 1");
+                throw new ArgumentException("Qubit amplitudes must be normalized");
         }
         public int ReadQubit()
         {
@@ -36,40 +36,35 @@ namespace Quantum
         }
         
     }
-    public struct ComplexNum
+    public class ComplexNum
     {
         public double Real;
         public double Imaginary;
-        public double theta;
-        public double r;
+        
         public ComplexNum(double re, double i)
         {
             Real = re; Imaginary = i;
-            theta = Math.Atan2(i, r);
-            r = Magnitude();
+            
         }
-        public void ComplexConjugate()
+        public static ComplexNum FromPolar(double r, double theta)
         {
-            Imaginary *= -1;
+            return new ComplexNum(r * Math.Cos(theta), r * Math.Sin(theta));
         }
-        public void MultiplyByScalar(int scalar)
-        {
-            Real *= scalar;
-            Imaginary *= scalar;
-        }
-        public void MultiplyByComplex(ComplexNum complexNum)
-        {
-            Real = complexNum.Real * Real + Imaginary * complexNum.Imaginary;
-            Imaginary = complexNum.Imaginary * Real + complexNum.Real * Imaginary;
-        }
-        public void AddScalar(int scalar)
-        {
-            Real += scalar;
-        }
-        public double Magnitude()
-        {
-            return Math.Sqrt(Math.Pow(Real, 2) + Math.Pow(Imaginary, 2));
-        }
+        public ComplexNum Conjugate() => new ComplexNum(Real, -Imaginary);
+        
+        public static ComplexNum operator *(ComplexNum a, ComplexNum b)
+       => new ComplexNum(a.Real * b.Real - a.Imaginary * b.Imaginary,
+                        a.Real * b.Imaginary + a.Imaginary * b.Real);
+
+
+        public static ComplexNum operator +(ComplexNum a, ComplexNum b) => new ComplexNum(a.Real + b.Real, b.Imaginary + a.Imaginary);
+        public static ComplexNum operator -(ComplexNum a, ComplexNum b) => new ComplexNum(a.Real - b.Real, b.Imaginary - a.Imaginary);
+        public double Magnitude() => Math.Sqrt(Math.Pow(Real, 2) + Math.Pow(Imaginary, 2));
+        public static ComplexNum operator *(ComplexNum a, double scalar)
+        => new ComplexNum(a.Real * scalar, a.Imaginary * scalar);
+
+        public static ComplexNum operator /(ComplexNum a, double scalar)
+            => new ComplexNum(a.Real / scalar, a.Imaginary / scalar);
         public double MagnitudeSquared() => Real * Real + Imaginary * Imaginary;
     }
 

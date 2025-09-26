@@ -6,30 +6,53 @@ using System.Threading.Tasks;
 
 namespace Quantum
 {
-    
-    
+    public interface IArithmetic<T>
+    {
+        T Add(T a, T b);
+        T Multiply(T a, T b);
+        T Zero {  get; }
+        T Subtract(T a, T b);
+        
+    }
+    public class IntArithmetic : IArithmetic<int>
+    {
+        public int Add(int a, int b) => a + b;
+        public int Multiply(int a, int b) => a * b;
+        public int Subtract(int a, int b) => a - b;
+        public int Zero => 0;
+        
+    }
+    public class ComplexArithmetic : IArithmetic<ComplexNum>
+    {
+        public ComplexNum Add(ComplexNum a, ComplexNum b) => a + b;
+        public ComplexNum Multiply(ComplexNum a, ComplexNum b) => a * b;
+        public ComplexNum Subtract(ComplexNum a, ComplexNum b) => a - b; 
+        public ComplexNum Zero => new ComplexNum(0, 0);
+        public ComplexNum Conjugate(ComplexNum a) => a.Conjugate();
+    }   
 
-    public class Matrix
+
+    public class Matrix<T>
     {
         public int[] shape;
-        public int[,] Data;
-
-        public Matrix(int n, int m)
+        public T[,] Data;
+        private readonly IArithmetic<T> math;
+        public Matrix(int n, int m, IArithmetic<T> math)
         {
-            Data = new int[n, m];
+            Data = new T[n, m];
             shape = new int[2];
             shape[0] = n;
             shape[1] = m;
-
+            this.math = math;
         }
-        public int this[int i, int j]
+        public T this[int i, int j]
         {
             get => Data[i, j];
             set => Data[i, j] = value;
         }
-        public Matrix Transpose()
+        public Matrix<T> Transpose()
         {
-            Matrix mat = new Matrix(shape[1], shape[0]);
+            Matrix<T> mat = new Matrix<T>(shape[1], shape[0], math);
             for (int i = 0; i < shape[0]; i++)
             {
                 for (int j = 0; j < shape[1]; j++)
@@ -39,45 +62,46 @@ namespace Quantum
             }
             return mat;
         }
-        public Matrix MatrixMultiply(Matrix mat)
+        public Matrix<T> MatrixMultiply(Matrix<T> mat)
         {
-            Matrix result = new Matrix(shape[0], mat.shape[1]);
+            Matrix<T> result = new Matrix<T>(shape[0], mat.shape[1], math);
             for (int i = 0; i < shape[0]; i++)
             {
-                int[] row = this.GetRow(i);
+                T[] row = this.GetRow(i);
                 for (int j = 0; j < mat.shape[1]; j++)
                 {
-                    int[] col = mat.GetColumn(j);
-                    result[i, j] = DotProduct(row, col);
+                    T[] col = mat.GetColumn(j);
+                    result[i, j] = Dotproduct(row, col);
                 }
             }
 
             return result;
         }
-        
-        public Matrix AddMatrix(Matrix mat)
+
+        public Matrix<T> AddMatrix(Matrix<T> mat)
         {
-            if (mat.shape != shape)
-            {
+            if (shape[0] != mat.shape[0] || shape[1] != mat.shape[1])
                 throw new ArgumentException("Matrix shapes must be the same");
+
+            if (typeof(T) != typeof(int) && typeof(T) != typeof(ComplexNum))
+            {
+                throw new ArgumentException("Unsupported type");
             }
             else
             {
-                Matrix Output = new Matrix(shape[0], shape[1]);
-                int[,] Result = new int[shape[0], shape[1]];
+                Matrix<T> Output = new Matrix<T>(shape[0], shape[1], math);
                 for (int i = 0; i < shape[0]; i++)
                 {
-                    for (int ii = 0; ii < shape[1]; ii++)
-                    {
-                        Result[i, ii] = mat[i, ii] + this[i, ii];
-                    }
+                     for (int ii = 0; ii < shape[1]; ii++)
+                     {
+                        Output[i, ii] = math.Add( mat[i, ii] ,this[i, ii]);
+                     }
                 }
-                Output.SetValues(Result);
                 return Output;
             }
 
         }
-        public void SetValues(int[,] ints)
+        public void SetValues(T[,] ints)
         {
             if (Data.Length != ints.Length)
             {
@@ -88,40 +112,37 @@ namespace Quantum
                 Data = ints;
             }
         }
-        public int[] GetRow(int rowIndex)
+        public T[] GetRow(int rowIndex)
         {
             int cols = Data.GetLength(1);
-            int[] row = new int[cols];
+            T[] row = new T[cols];
             for (int j = 0; j < cols; j++)
             {
                 row[j] = Data[rowIndex, j];
             }
             return row;
         }
-        public int[] GetColumn(int colIndex)
+        public T[] GetColumn(int colIndex)
         {
             int rows = Data.GetLength(0);
-            int[] col = new int [rows];
+            T[] col = new T[rows];
             for (int j = 0; j < rows; j++)
             {
                 col[j] = Data[j, colIndex];
             }
             return col;
         }
-        private int DotProduct(int[] a, int[] b)
+        
+        private T Dotproduct(T[] a, T[] b) 
         {
-            if (a.Length != b.Length)
-            {
-                throw new ArgumentException("Vectors must be the same length for dot product.");
-            }
+            T result = math.Zero;
 
-            int result = 0;
             for (int i = 0; i < a.Length; i++)
             {
-                result += a[i] * b[i];
+                result = math.Add(result, math.Multiply(a[i], b[i]));
             }
-
             return result;
         }
+
     }
 }

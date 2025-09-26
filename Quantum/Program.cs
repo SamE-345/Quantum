@@ -27,22 +27,11 @@ namespace Quantum
             T[] col = new T[rows];
             for (int j = 0; j < rows; j++)
             {
-                col[j] = Data[colIndex, j];
+                col[j] = Data[j, colIndex];
             }
             return col;
         }
-        public virtual Vectors ApplyGate(Vectors vec)
-        {
-            Vectors output = new Vectors(vec.shape);
-            int[] tempData = new int[vec.shape];
-
-            for (int i = 0; i < vec.shape; i++)
-            {
-                int[] row = GetRow(i) as int[];
-                output[i] = Dotproduct(vec.Data, row);
-            }
-            return output;
-        }
+        
         protected virtual double Dotproduct(double[] input1, int[] input2)
         {
             if (input1.Length != input2.Length)
@@ -59,9 +48,16 @@ namespace Quantum
                 return sum;
             }
         }
-        protected virtual ComplexNum Dotproduct(ComplexNum[] input1, ComplexNum[] input2)
+        protected virtual ComplexNum Dotproduct(ComplexNum[] a, ComplexNum[] b)
         {
-            return input2[0]; //TODO
+            if (a.Length != b.Length) throw new ArgumentException("Lengths must match");
+            ComplexNum sum = new ComplexNum(0, 0);
+            for (int i = 0; i < a.Length; i++)
+            {
+                
+                sum += a[i].Conjugate() * b[i]; 
+            }
+            return sum;
         }
 
 
@@ -69,13 +65,20 @@ namespace Quantum
 
     public class XGate : Gate<int>
     {
-          int[,] Data = { { 0, 1 }, { 1, 0 } };
+        public XGate() {
+            
+            Data[0, 0] = 0; Data[0, 1] = 1;
+            Data[1, 0] = 1; Data[1, 1] = 0;
+
+        }
+          
     }
     public class YGate : Gate<ComplexNum>
     {
-        private ComplexNum[,] Data = new ComplexNum[2, 2];
+        
         public YGate()
         {
+
             Data[0, 0] = new ComplexNum(0, 0);
             Data[1, 1] = new ComplexNum(0, 0);
             Data[0, 1] = new ComplexNum(0, -1);
@@ -94,7 +97,7 @@ namespace Quantum
     {
         public ZGate()
         {
-            Data = new int[2,2];
+        
             Data[0, 0] = 1;
             Data[1, 1] = -1;
             Data[0, 1] = 0;
