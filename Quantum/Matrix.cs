@@ -12,6 +12,8 @@ namespace Quantum
         T Multiply(T a, T b);
         T Zero {  get; }
         T Subtract(T a, T b);
+        T Squared(T a);
+        T Divide(T a, T b);
         
     }
     public class IntArithmetic : IArithmetic<int>
@@ -20,6 +22,8 @@ namespace Quantum
         public int Multiply(int a, int b) => a * b;
         public int Subtract(int a, int b) => a - b;
         public int Zero => 0;
+        public int Squared(int a) => a*a;
+        public int Divide(int a, int b) => a/b;
         
     }
     public class ComplexArithmetic : IArithmetic<ComplexNum>
@@ -29,21 +33,52 @@ namespace Quantum
         public ComplexNum Subtract(ComplexNum a, ComplexNum b) => a - b; 
         public ComplexNum Zero => new ComplexNum(0, 0);
         public ComplexNum Conjugate(ComplexNum a) => a.Conjugate();
-    }   
+        public ComplexNum Squared(ComplexNum a) => a*a;
+        public ComplexNum Divide(ComplexNum a, ComplexNum b)
+        {
+            return (a * b.Conjugate())/(Math.Pow(b.Real,2)* Math.Pow(b.Imaginary,2));
+        }
+    }
+    public class DoubleArithmetic : IArithmetic<double>
+    {
+        public double Add(double a, double b) => a + b;
+        public double Multiply(double a, double b) => a * b;
+        public double Subtract(double a, double b) => a - b;
+        public double Zero => 0.0;
+        public double Squared(double a) => a*a;
+        public double Divide(double a, double b) => a/b;
+    }
 
+    public static class Arithmetic<T>
+    {
+        public static IArithmetic<T> Default
+        {
+            get
+            {
+                if (typeof(T) == typeof(int))
+                    return (IArithmetic<T>)(object)new IntArithmetic();
+                if (typeof(T) == typeof(double))
+                    return (IArithmetic<T>)(object)new DoubleArithmetic();
+                if (typeof(T) == typeof(ComplexNum))
+                    return (IArithmetic<T>)(object)new ComplexArithmetic();
+
+                throw new NotSupportedException($"No default arithmetic defined for {typeof(T)}");
+            }
+        }
+    }
 
     public class Matrix<T>
     {
         public int[] shape;
         public T[,] Data;
         private readonly IArithmetic<T> math;
-        public Matrix(int n, int m, IArithmetic<T> math)
+        public Matrix(int n, int m, IArithmetic<T> math=null)
         {
             Data = new T[n, m];
             shape = new int[2];
             shape[0] = n;
             shape[1] = m;
-            this.math = math;
+            this.math = math ?? Arithmetic<T>.Default;
         }
         public T this[int i, int j]
         {

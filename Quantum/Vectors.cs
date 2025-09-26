@@ -6,46 +6,62 @@ using System.Threading.Tasks;
 
 namespace Quantum
 {
-    public class Vectors
+    public class Vectors <T> 
     {
-        public double[] Data;
+        public T[] Data;
         public int shape;
-        public Vectors(int dimensions)
+        private readonly IArithmetic<T> math;
+        public Vectors(int dimensions, IArithmetic<T> math=null)
         {
-            Data = new double[dimensions];
+            Data = new T[dimensions];
             shape = dimensions;
+            this.math = math ?? Arithmetic<T>.Default;
         }
-        public double this[int i]
+        public T this[int i]
         {
             get => Data[i];
             set => Data[i] = value;
         }
 
-        public double DotProduct(Vectors vector)
+        public T DotProduct(Vectors<T> vector)
         {
             CheckSize(vector);
-            double result = 0;
+            T result = math.Zero;
             for (int i = 0; i < Data.Length; i++)
             {
-                result += Data[i] * vector.Data[i];
+                result =math.Add(result, math.Multiply(Data[i], vector.Data[i]));
             }
             return result;
         }
         public double Magnitude() //Returns the magnitude of the vector
         {
-            double result = 0;
-            for (int i = 0; i < Data.Length; i++)
+            double sum = 0;
+            for (int i = 0; i < shape; i++)
             {
-                result += Data[i] * Data[i];
+                if (typeof(T) == typeof(int))
+                {
+                    int val = (int)(object)this[i];
+                    sum += val * val;
+                }
+                else if (typeof(T) == typeof(double))
+                {
+                    double val = (double)(object)this[i];
+                    sum += val * val;
+                }
+                else if (typeof(T) == typeof(ComplexNum))
+                {
+                    var val = (ComplexNum)(object)this[i];
+                    sum += val.Real * val.Real + val.Imaginary * val.Imaginary;
+                }
+                else
+                {
+                    throw new NotSupportedException($"Norm not implemented for {typeof(T)}");
+                }
             }
-            return (double)Math.Sqrt(result);
+            return Math.Sqrt(sum);
         }
-        public double CosineSimilarity(Vectors vector) //Returns the value of cos(x), where x is the angle between the two vectors
-        {
-            CheckSize(vector);
-            return (DotProduct(vector) / (Magnitude() * vector.Magnitude()));
-        }
-        public void SetValue(int index, int value) //Sets the value of the vector at the given index
+       
+        public void SetValue(int index, T value) //Sets the value of the vector at the given index
         {
             if (index < 0 || index >= Data.Length)
             {
@@ -53,48 +69,44 @@ namespace Quantum
             }
             Data[index] = value;
         }
-        public void MultiplyByScalar(int scalar)
+        public void MultiplyByScalar(T scalar)
         {
             for (int i = 0; i < Data.Length; i++)
             {
-                Data[i] *= scalar;
+                Data[i] = math.Multiply(Data[i], scalar);
             }
         }
-        public void Add(Vectors vector)
-        {
-            CheckSize(vector);
-            for (int i = 0; i < Data.Length; i++)
-            {
-                Data[i] += vector.Data[i];
-            }
-        }
-        public void DivideByScalar(int scalar)
-        {
-            if (scalar == 0)
-            {
-                throw new DivideByZeroException();
-            }
-            for (int i = 0; i < Data.Length; i++)
-            {
-                Data[i] /= scalar;
-            }
-        }
-        public void Subtract(Vectors vector)
+        public void Add(Vectors<T> vector)
         {
             CheckSize(vector);
             for (int i = 0; i < Data.Length; i++)
             {
-                Data[i] -= vector.Data[i];
+                Data[i] = math.Add(Data[i], vector.Data[i]);
             }
         }
-        public void Subtract(int scalar)
+        public void DivideByScalar(T scalar)
         {
             for (int i = 0; i < Data.Length; i++)
             {
-                Data[i] -= scalar;
+                Data[i] = math.Divide(Data[i], scalar);
             }
         }
-        private void CheckSize(Vectors vector)
+        public void Subtract(Vectors<T> vector)
+        {
+            CheckSize(vector);
+            for (int i = 0; i < Data.Length; i++)
+            {
+                Data[i] = math.Subtract(Data[i], vector.Data[i]);
+            }
+        }
+        public void Subtract(T scalar)
+        {
+            for (int i = 0; i < Data.Length; i++)
+            {
+                Data[i] = math.Subtract(Data[i], scalar);
+            }
+        }
+        private void CheckSize(Vectors<T> vector)
         {
             if (Data.Length != vector.Data.Length)
             {
