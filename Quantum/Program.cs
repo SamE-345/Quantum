@@ -6,104 +6,101 @@ using System.Runtime.CompilerServices;
 
 namespace Quantum
 {
-    public abstract class Gate<T>
+    public class ComplexNum
     {
-        protected T[,] Data;
+        public double Real;
+        public double Imaginary;
 
-        
-        protected T[] GetRow(int rowIndex)
+        public ComplexNum(double re, double i)
         {
-            int cols = Data.GetLength(1);
-            T[] row = new T[cols];
-            for (int j = 0; j < cols; j++)
-            {
-                row[j] = Data[rowIndex, j];
-            }
-            return row;
-        }
-        protected T[] GetColumn(int colIndex)
-        {
-            int rows = Data.GetLength(0);
-            T[] col = new T[rows];
-            for (int j = 0; j < rows; j++)
-            {
-                col[j] = Data[j, colIndex];
-            }
-            return col;
-        }
-        
-        protected virtual double Dotproduct(double[] input1, int[] input2)
-        {
-            if (input1.Length != input2.Length)
-            {
-                throw new Exception("Two list lengths are not equal");
-            }
-            else
-            {
-                double sum = 0;
-                for (int i = 0; i < input1.Length; i++)
-                {
-                    sum += input1[i] * input2[i];
-                }
-                return sum;
-            }
-        }
-        protected virtual ComplexNum Dotproduct(ComplexNum[] a, ComplexNum[] b)
-        {
-            if (a.Length != b.Length) throw new ArgumentException("Lengths must match");
-            ComplexNum sum = new ComplexNum(0, 0);
-            for (int i = 0; i < a.Length; i++)
-            {
-                
-                sum += a[i].Conjugate() * b[i]; 
-            }
-            return sum;
-        }
+            Real = re; Imaginary = i;
 
+        }
+        public static ComplexNum FromPolar(double r, double theta)
+        {
+            return new ComplexNum(r * Math.Cos(theta), r * Math.Sin(theta));
+        }
+        public ComplexNum Conjugate() => new ComplexNum(Real, -Imaginary);
+
+        public static ComplexNum operator *(ComplexNum a, ComplexNum b)
+       => new ComplexNum(a.Real * b.Real - a.Imaginary * b.Imaginary,
+                        a.Real * b.Imaginary + a.Imaginary * b.Real);
+
+
+        public static ComplexNum operator +(ComplexNum a, ComplexNum b) => new ComplexNum(a.Real + b.Real, b.Imaginary + a.Imaginary);
+        public static ComplexNum operator -(ComplexNum a, ComplexNum b) => new ComplexNum(a.Real - b.Real, b.Imaginary - a.Imaginary);
+        public double Magnitude() => Math.Sqrt(Math.Pow(Real, 2) + Math.Pow(Imaginary, 2));
+        public static ComplexNum operator *(ComplexNum a, double scalar)
+        => new ComplexNum(a.Real * scalar, a.Imaginary * scalar);
+
+        public static ComplexNum operator /(ComplexNum a, double scalar)
+            => new ComplexNum(a.Real / scalar, a.Imaginary / scalar);
+        public double MagnitudeSquared() => Real * Real + Imaginary * Imaginary;
+    }
+
+
+
+public interface IGate
+    {
+        string name { get; }
+        int numQubits { get; }
+        ComplexNum[,] GetMatrix();
 
     }
 
-    public class XGate : Gate<int>
+    public class XGate : IGate
     {
-        public XGate() {
-            
-            Data[0, 0] = 0; Data[0, 1] = 1;
-            Data[1, 0] = 1; Data[1, 1] = 0;
+        public string name => "X";
+        public int numQubits => 1; //Acts on 1 qubit
+        public ComplexNum[,] GetMatrix()
+        {
+            return new ComplexNum[,] {
+            { new ComplexNum(0,0), new ComplexNum(1,0) },
+            { new ComplexNum(1,0), new ComplexNum(0,0) }
+            };
+        }
 
-        }
-          
     }
-    public class YGate : Gate<ComplexNum>
+    public class YGate : IGate
     {
-        
-        public YGate()
+        public string name => "Y";
+        public int numQubits => 1;
+        public ComplexNum[,] GetMatrix()
         {
-
-            Data[0, 0] = new ComplexNum(0, 0);
-            Data[1, 1] = new ComplexNum(0, 0);
-            Data[0, 1] = new ComplexNum(0, -1);
-            Data[1, 0] = new ComplexNum(0, 1);
+            return new ComplexNum[,] {
+                { new ComplexNum(0, 0), new ComplexNum(0, -1) },
+                { new ComplexNum(0, 1), new ComplexNum(0, 0) }
+            };
         }
-        public YGate ComplexConjugate()
-        {
-            YGate yGate = new YGate();
-            yGate.Data[0, 1] = new ComplexNum(0, 1);
-            yGate.Data[1, 0] = new ComplexNum(0, -1);
-            return yGate;   
-        }
-        
     }
-    public class ZGate : Gate<int>
+    public class ZGate : IGate 
     {
-        public ZGate()
+        public string name => "Z";
+        public int numQubits => 1;
+        public ComplexNum[,] GetMatrix() {
+            return new ComplexNum[,] {
+            { new ComplexNum(1,0), new ComplexNum(0,0)},
+               {new ComplexNum(0,0), new ComplexNum(0,-1) }
+            };
+        }
+    }
+    public record CircuitOperation(IGate Gate, int[] Targets);
+    public class QuantumCicuit
+    {
+        private List<CircuitOperation> operations = new();
+        private ComplexNum[] state;
+        public int qubitCount { get; }
+        public QuantumCicuit(int qubitCount)
         {
-        
-            Data[0, 0] = 1;
-            Data[1, 1] = -1;
-            Data[0, 1] = 0;
-            Data[1, 0] = 0;
-            
-        }          
+            this.qubitCount = qubitCount;
+            int dim = 1 << qubitCount; // Logic Shift Right 
+            state = new ComplexNum[dim];
+            state[0] = new ComplexNum(1, 0);
+            for (int i = 1; i < dim; i++)
+            {
+                state[i] = new ComplexNum(0, 0);
+            }
+        }
     }
 
 }
