@@ -1,11 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-
-
-
-namespace Quantum
+﻿namespace Quantum.Core
 {
     public class ComplexNum
     {
@@ -41,7 +34,7 @@ namespace Quantum
 
 
 
-public interface IGate
+    public interface IGate
     {
         string name { get; }
         int numQubits { get; } //Shows how many qubits the gate acts on
@@ -74,11 +67,12 @@ public interface IGate
             };
         }
     }
-    public class ZGate : IGate 
+    public class ZGate : IGate
     {
         public string name => "Z";
         public int numQubits => 1;
-        public ComplexNum[,] GetMatrix() {
+        public ComplexNum[,] GetMatrix()
+        {
             return new ComplexNum[,] {
             { new ComplexNum(1,0), new ComplexNum(0,0)},
                {new ComplexNum(0,0), new ComplexNum(0,-1) }
@@ -86,12 +80,12 @@ public interface IGate
         }
     }
     public record CircuitOperation(IGate Gate, int[] Targets);
-    public class QuantumCicuit
+    public class QuantumCircuit
     {
         private List<CircuitOperation> operations = new();
         private ComplexNum[] state;
         public int qubitCount { get; }
-        public QuantumCicuit(int qubitCount)
+        public QuantumCircuit(int qubitCount)
         {
             this.qubitCount = qubitCount;
             int dim = 1 << qubitCount; // Logic Shift Right 
@@ -102,14 +96,15 @@ public interface IGate
                 state[i] = new ComplexNum(0, 0);
             }
 
-            
+
         }
-        public void AddGate(IGate g, params int[] targets){
+        public void AddGate(IGate g, params int[] targets)
+        {
             if (targets.Length != g.numQubits)
             {
                 throw new ArgumentException("The number of targets is not equal to the requirements of the gate");
             }
-            else if(targets.Max() >= state.Length || targets.Min()<0)
+            else if (targets.Max() >= state.Length || targets.Min() < 0)
             {
                 throw new Exception("The target is out of range of the state vector");
             }
@@ -119,25 +114,28 @@ public interface IGate
                 operations.Add(op);
             }
         }
-        private void ApplyGate(CircuitOperation op){
+        private void ApplyGate(CircuitOperation op)
+        {
             ComplexNum[,] gateMatrix = op.Gate.GetMatrix();
             ComplexNum[,] mat = BuildMatrix(gateMatrix, op.Targets);
             state = MatMultiply(state, mat);
         }
-        public void Run() {
-            foreach(var op in operations)
+        public void Run()
+        {
+            foreach (var op in operations)
             {
                 ApplyGate(op);
             }
         }
         public ComplexNum[] GetState() => state;
 
-        public ComplexNum[,] BuildMatrix(ComplexNum[,] gateMatrix, int[] targets){
+        public ComplexNum[,] BuildMatrix(ComplexNum[,] gateMatrix, int[] targets)
+        {
             ComplexNum[,] result = new ComplexNum[,] { { new ComplexNum(1, 0) } };
-            for(int i=0; i<qubitCount; i++)
+            for (int i = 0; i < qubitCount; i++)
             {
                 bool isTarget = Array.IndexOf(targets, i) != -1;
-                ComplexNum[,] toTensor = isTarget ? gateMatrix: Identity2();
+                ComplexNum[,] toTensor = isTarget ? gateMatrix : Identity2();
                 result = TensorProduct(result, toTensor);
             }
             return result;
@@ -150,15 +148,15 @@ public interface IGate
             int bCols = B.GetLength(1);
             var result = new ComplexNum[aRows * bRows, aCols * bCols];
 
-            for (int i=0;i<aRows; i++)
+            for (int i = 0; i < aRows; i++)
             {
-                for (int ii = 0; ii < bRows; ii++)
+                for (int ii = 0; ii < aCols; ii++)
                 {
-                    for(int iii=0; iii<bCols; iii++)
+                    for (int iii = 0; iii < bRows; iii++)
                     {
-                        for(int iv=0; iv<aCols; iv++)
+                        for (int iv = 0; iv < bCols; iv++)
                         {
-                            result[i*bRows+iii, ii*bCols+iv] = A[i,ii] * B[iii,iv];
+                            result[i * bRows + iii, ii * bCols + iv] = A[i, ii] * B[iii, iv];
                         }
                     }
                 }
@@ -191,5 +189,4 @@ public interface IGate
         }
 
     }
-
 }

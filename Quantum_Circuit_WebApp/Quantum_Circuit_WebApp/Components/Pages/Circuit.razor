@@ -1,0 +1,113 @@
+﻿
+@page "/circuit"
+@rendermode InteractiveServer
+@using Quantum
+@using Quantum_Circuit_WebApp.Services;
+@inject CircuitService QCircuit
+
+<h1>Quantum Circuit Simulator</h1>
+<p>Build and simulate quantum circuits interactively.</p>
+
+<div style="margin-bottom: 1rem;">
+    <h3>Create Circuit</h3>
+    <input type="number" min="1" @bind="qubits" />
+    <button @onclick="CreateCircuit">Create</button>
+</div>
+
+@if (QCircuit.hasCircuit)
+{
+    <div style="margin-bottom: 1rem;">
+        <h3>Add Gate</h3>
+
+        <select @bind="selectedGate">
+            <option value="X">X</option>
+            <option value="Y">Y</option>
+            <option value="Z">Z</option>
+        </select>
+
+        <select @bind="targetQubit">
+            @for (int i = 0; i < QCircuit.qubitCount; i++)
+            {
+                <option value="@i">Qubit @i</option>
+            }
+        </select>
+
+        <button @onclick="AddGate">Add Gate</button>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+        <button @onclick="RunCircuit">Run Circuit</button>
+    </div>
+
+    <h3>State Vector</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Basis</th>
+                <th>Amplitude</th>
+                <th>Probability</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in StateRows)
+            {
+                <tr>
+                    <td>|@row.Binary⟩</td>
+                    <td>@row.Amplitude</td>
+                    <td>@row.Probability</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    private int qubits = 2;
+    private string selectedGate = "X";
+    private int targetQubit = 0;
+
+    private List<StateRow> StateRows = new();
+
+    private void CreateCircuit()
+    {
+        QCircuit.CreateCircuit(qubits);
+        StateRows.Clear();
+    }
+
+    private void AddGate()
+    {
+        QCircuit.AddGate(selectedGate, targetQubit);
+    }
+
+    private void RunCircuit()
+    {
+        QCircuit.Run();
+        UpdateState();
+    }
+
+    private void UpdateState()
+    {
+        StateRows.Clear();
+
+        var state = QCircuit.GetState();
+        for (int i = 0; i < state.Length; i++)
+        {
+            var amp = state[i];
+            StateRows.Add(new StateRow
+            {
+                Index = i,
+                Binary = Convert.ToString(i, 2).PadLeft(QCircuit.qubitCount, '0'),
+                Amplitude = $"{amp.Real:F3} + {amp.Imaginary:F3}i",
+                Probability = amp.MagnitudeSquared()
+            });
+        }
+    }
+
+    private class StateRow
+    {
+        public int Index { get; set; }
+        public string Binary { get; set; } = "";
+        public string Amplitude { get; set; } = "";
+        public double Probability { get; set; }
+    }
+}
